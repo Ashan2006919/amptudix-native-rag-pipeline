@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     EMBED_MODEL: str = "mxbai-embed-large"
     CHROMA_PATH: str = "chroma_db"
     DATA_FOLDER: str = "data"
+    GEMINI_API_KEY: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
