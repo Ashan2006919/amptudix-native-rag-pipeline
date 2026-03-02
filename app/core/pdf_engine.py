@@ -29,20 +29,23 @@ def recursive_split(chunk_size: int, chunk_overlap: int) -> List[dict]:
     chunk_dict = []
 
     for chunk in raw_chunks:
-        chunks = []
-        text = chunk.get("text")
+        final_chunks = []
+        text = chunk.get("text", "")
         if not text:
             continue
         paragraph = text.split("\n\n")
 
         current_chunk = ""
         for para in paragraph:
+            para = para.strip()
+            if not para or len(para) < 5:
+                continue
 
             if len(current_chunk) + len(para) <= chunk_size:
                 current_chunk += para + "\n\n"
-            else:
+            elif len(para) <= chunk_size:
                 if current_chunk:
-                    chunks.append(current_chunk.strip())
+                    final_chunks.append(current_chunk.strip())
 
                 overlap_text = (
                     current_chunk[-(chunk_overlap):]
@@ -51,9 +54,22 @@ def recursive_split(chunk_size: int, chunk_overlap: int) -> List[dict]:
                 )
                 current_chunk += overlap_text + para + "\n\n"
 
-        if current_chunk:
-            chunks.append(current_chunk)
+            else:
+                if current_chunk:
+                    final_chunks.append(current_chunk.strip())
 
-        chunk_dict.append({"chunk": chunks, "filename": chunk.get("filename")})
+                start = 0
+                while start < len(para):
+                    end = start + chunk_size
+
+                    sub_chunk = para[start:end]
+                    final_chunks.append(sub_chunk.strip())
+
+                    start += chunk_size - chunk_overlap
+
+        if current_chunk:
+            final_chunks.append(current_chunk)
+
+        chunk_dict.append({"chunk": final_chunks, "filename": chunk.get("filename")})
 
     return chunk_dict

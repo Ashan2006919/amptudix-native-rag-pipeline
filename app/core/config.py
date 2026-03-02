@@ -4,9 +4,9 @@ from pathlib import Path
 
 class Settings(BaseSettings):
 
-    CHUNK_SIZE: int = 500
-    CHUNK_OVERLAP: int = 50
-    EMBED_MODEL: str = "nomic-embed-text"
+    CHUNK_SIZE: int = 200
+    CHUNK_OVERLAP: int = 20
+    EMBED_MODEL: str = "mxbai-embed-large"
     CHROMA_PATH: str = "chroma_db"
     DATA_FOLDER: str = "data"
 
