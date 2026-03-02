@@ -1,0 +1,16 @@
+[project]
+name = "amptudix-rag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.2",
+    "fastapi>=0.135.1",
+    "httpx>=0.28.1",
+    "ollama>=0.6.1",
+    "pydantic-settings>=2.13.1",
+    "pymupdf>=1.27.1",
+    "python-multipart>=0.0.22",
+    "uvicorn>=0.41.0",
+]
