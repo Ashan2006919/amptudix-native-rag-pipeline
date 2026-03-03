@@ -1,17 +1,17 @@
 import asyncio
 from app.core.config import settings
-from app.core.pdf_engine import recursive_split
+from app.core.file_engine import recursive_split
 from app.core.database import create_embeddings, save_to_chroma, query_rag
 from app.core.chat import generate_answer
 
 
 async def main():
-    # Use settings instead of hardcoded numbers
-    chunk_dict = recursive_split(settings.CHUNK_SIZE, settings.CHUNK_OVERLAP)
+    # # Use settings instead of hardcoded numbers
+    # chunk_dict = await recursive_split(settings.CHUNK_SIZE, settings.CHUNK_OVERLAP)
 
-    # Process and Save
-    processed_data = create_embeddings(chunk_dict)
-    save_to_chroma(processed_data)
+    # # Process and Save
+    # processed_data = await create_embeddings(chunk_dict)
+    # await save_to_chroma(processed_data)
 
     # Simple Query Interface
     while True:
@@ -19,7 +19,7 @@ async def main():
         if query.lower() == "exit":
             break
 
-        response = query_rag(query)
+        response = await query_rag(query)
 
         # ChromaDB returns a nested dict. Let's make the print readable:
         print("\n📚 Results:")

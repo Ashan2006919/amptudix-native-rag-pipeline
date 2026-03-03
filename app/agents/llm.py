@@ -1,28 +1,27 @@
+from typing import List
 import ollama
 from google import genai
 from app.core.config import settings
 
 
-async def get_answers(prompt: str, query: str) -> dict:
-    return await ollama_model(prompt=prompt, query=query)
+async def get_answers(prompt: str, query: str, history: dict):
+
+    messages = [{"role": "system", "content": prompt}]
+    messages.extend(history)
+
+    messages.append({"role": "user", "content": query})
+
+    async for chunk in ollama_model(messages=messages):
+        yield chunk
 
 
-async def ollama_model(prompt: str, query: str) -> dict:
-    response = await ollama.AsyncClient().chat(
-        model="llama3.2:3b",
-        messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": query},
-        ],
-        options={
-            "temperature": 0.2,
-            "top_p": 0.8,
-            "num_predict": 220,
-        },
-    )
+async def ollama_model(messages: List):
+    client = ollama.AsyncClient()
 
-    answer = (response or {}).get("message", {}).get("content", "").strip()
-    return {"answer": answer or "I don't know"}
+    async for part in await client.chat(
+        model=settings.OLLAMA_MODEL_NAME, stream=True, messages=messages
+    ):
+        yield part["message"]["content"]
 
 
 async def google_model(prompt: str, query: str) -> dict:
@@ -30,11 +29,10 @@ async def google_model(prompt: str, query: str) -> dict:
         raise RuntimeError("GEMINI_API_KEY is not configured.")
 
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    combined_prompt = f"{prompt}\n\nUser query:\n{query}"
 
     response = await client.aio.models.generate_content(
         model="gemini-2.5-flash",
-        contents=combined_prompt,
+        contents=f"{prompt}\n\nUser Question: {query}",
     )
 
     answer = (getattr(response, "text", None) or "").strip()

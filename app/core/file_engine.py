@@ -1,31 +1,49 @@
 import os
-from typing import List
+from typing import List, Optional
 import fitz
-import ollama
-from uuid import uuid4
 from app.core.config import settings
 
 
-def extract_from_pdf(folder_path) -> List[dict]:
+async def extract_text_from_file(
+    folder_path: str, filename: Optional[str] = None
+) -> List[dict]:
     raw_chunks = []
 
-    for file in os.listdir(folder_path):
-        if file.endswith(".pdf"):
-            text = ""
-            file_path = os.path.join(folder_path, file)
+    files_to_process = (
+        [filename]
+        if filename
+        else [
+            f for f in os.listdir(folder_path) if f.lower().endswith((".pdf", ".txt"))
+        ]
+    )
+
+    for file in files_to_process:
+        text = ""
+        file_path = os.path.join(settings.DATA_FOLDER, file)
+
+        if file.lower().endswith(".pdf"):
             with fitz.open(file_path) as doc:
                 for page in doc:
                     blocks = page.get_text("blocks")
+
                     for b in blocks:
                         text += b[4] + "\n"
 
-            raw_chunks.append({"text": text, "filename": file})
+        elif file.lower().endswith(".txt"):
+            with open(file_path, "r", encoding="utf-8") as doc:
+                text = doc.read()
+
+        raw_chunks.append({"text": text, "filename": file})
 
     return raw_chunks
 
 
-def recursive_split(chunk_size: int, chunk_overlap: int) -> List[dict]:
-    raw_chunks = extract_from_pdf(settings.DATA_FOLDER)
+async def recursive_split(
+    chunk_size: int, chunk_overlap: int, filename: Optional[str] = None
+) -> List[dict]:
+    raw_chunks = await extract_text_from_file(
+        folder_path=settings.DATA_FOLDER, filename=filename
+    )
     chunk_dict = []
 
     for chunk in raw_chunks:

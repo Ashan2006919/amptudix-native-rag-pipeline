@@ -1,15 +1,18 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from app.schemas.chat import ChatBase
 from app.core.database import query_rag
 from app.agents.llm import get_answers
 
 chat_router = APIRouter(prefix="/chat")
 
+session_db = {}
+
 
 @chat_router.post("")
 async def chat_with_rag(request: ChatBase):
     try:
-        results = query_rag(request.query, 6)
+        results = await query_rag(request.query, 6)
         documents = (results or {}).get("documents") or []
         raw_chunks = documents[0] if documents else []
 
@@ -49,15 +52,13 @@ async def chat_with_rag(request: ChatBase):
     Rules:
     1) Be concise and focused on the exact query intent.
     2) Do not include jokes, filler, or meta commentary.
-    4) If some questions can't be answered, you can try to guess it based on given context, but if the context is too tight to guess just say: I don't know
+    4) If the answer isn't explicitly in the context, say you don't know. Do not confuse different entities (e.g., do not confuse the creator with the creation).  
     5) Prefer 3-6 bullet points when listing facts.
     6) If numbers are present in context, preserve them exactly.
 
     CONTEXT DATA:
     {context}
     """
-
-    answers: dict = await get_answers(prompt=system_prompt, query=request.query)
 
     metadatas = (results or {}).get("metadatas") or []
     metadata_items = metadatas[0] if metadatas else []
@@ -69,6 +70,13 @@ async def chat_with_rag(request: ChatBase):
             if isinstance(source, str) and source
         }
     )
+    sources_header = ", ".join(sources)
 
-    answers.update({"sources": sources})
-    return answers
+    return StreamingResponse(
+        get_answers(prompt=system_prompt, query=request.query, history=session_db),
+        media_type="text/plain",
+        headers={
+            "X-Sources": sources_header,
+            "Access-Control-Expose-Header": "X-Sources",
+        },
+    )

@@ -14,5 +14,6 @@ dependencies = [
     "pymupdf>=1.27.1",
     "python-multipart>=0.0.22",
     "sqlmodel>=0.0.37",
+    "streamlit>=1.54.0",
     "uvicorn>=0.41.0",
 ]
